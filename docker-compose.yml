@@ -23,11 +23,11 @@ services:
     container_name: caloriemate-app
     ports:
       - "${PORT:-8080}:8080"
+    env_file:
+      - ./.env
     environment:
       - STAGE=prod
       - CLIP_HOST=http://clip:8001
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - OPENROUTER_VISION_MODEL=${OPENROUTER_VISION_MODEL:-google/gemini-2.5-flash}
     volumes:
       - pb_data:/pb/pb_data
     depends_on:

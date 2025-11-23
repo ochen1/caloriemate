@@ -23,6 +23,7 @@ import (
 	"github.com/ignoxx/caloriemate/ai/clip"
 	"github.com/ignoxx/caloriemate/ai/ollama"
 	"github.com/ignoxx/caloriemate/ai/openrouter"
+	"github.com/ignoxx/caloriemate/ai/custom"
 	"github.com/ignoxx/caloriemate/api"
 	_ "github.com/ignoxx/caloriemate/migrations"
 	"github.com/ignoxx/caloriemate/types"
@@ -103,8 +104,11 @@ func main() {
 	case "openrouter":
 		llm = openrouter.New()
 		app.Logger().Info("Using OpenRouter AI provider")
+	case "custom":
+		llm = custom.New()
+		app.Logger().Info("Using custom AI provider")
 	default:
-		log.Fatalf("Unknown AI_PROVIDER: %s (valid options: ollama, openrouter)", aiProvider)
+		log.Fatalf("Unknown AI_PROVIDER: %s (valid options: ollama, openrouter, custom)", aiProvider)
 	}
 
 	var imgLlm ai.Embedder = clip.New()
