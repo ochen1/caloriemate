@@ -23,6 +23,31 @@ The app focuses on calories and protein since those were my main concerns. The m
 
 Under the hood, it uses CLIP embeddings to detect similar meals you've logged before, so over time it gets faster at recognizing your regular foods.
 
+## Architecture
+
+```mermaid
+graph TD
+    subgraph Frontend
+        UI[React + Tailwind + shadcn/ui]
+    end
+
+    subgraph Backend
+        PB[PocketBase / Go]
+        DB[(SQLite + sqlite-vec)]
+    end
+
+    subgraph AI Services
+        CLIP["CLIP Service (Python)"]
+        LLM["LLM Provider"]
+    end
+
+    UI -->|HTTP API| PB
+    PB -->|Store Data| DB
+    PB -->|Generate Embeddings| CLIP
+    PB -->|Analyze Images| LLM
+    CLIP -->|Vector Search| DB
+```
+
 ## Self-Hosting
 
 The easiest way to run this is with Docker Compose.
