@@ -1,0 +1,37 @@
+# Dependency directories
+frontend/node_modules
+node_modules
+
+# Build outputs
+frontend/build
+frontend/dist
+
+# Database data
+pb_data/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Editor directories
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Other services
+clip/
