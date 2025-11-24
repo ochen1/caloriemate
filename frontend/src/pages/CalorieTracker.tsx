@@ -64,6 +64,12 @@ export default function CalorieTracker() {
   );
   const [isDragging, setIsDragging] = useState(false);
   const [isConvertingHeic, setIsConvertingHeic] = useState(false);
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualMealName, setManualMealName] = useState("");
+  const [manualCalories, setManualCalories] = useState("");
+  const [manualProtein, setManualProtein] = useState("");
+  const [manualCarbs, setManualCarbs] = useState("");
+  const [manualFat, setManualFat] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasLoadedMealsRef = useRef(false);
   const hasLoadedProfileRef = useRef(false);
@@ -481,6 +487,105 @@ export default function CalorieTracker() {
 
     if (imageFile) {
       await processImageFile(imageFile);
+    }
+  };
+
+  const handleManualMealSubmission = async () => {
+    if (isSubmittingMeal) return;
+
+    const calories = parseFloat(manualCalories);
+    const protein = parseFloat(manualProtein);
+    const carbs = parseFloat(manualCarbs);
+    const fat = parseFloat(manualFat);
+
+    if (!manualMealName.trim() || isNaN(calories) || isNaN(protein) || isNaN(carbs) || isNaN(fat)) {
+      return;
+    }
+
+    setIsSubmittingMeal(true);
+
+    const tempId = `temp_${Date.now()}`;
+
+    try {
+      // Create optimistic meal entry that appears immediately
+      const optimisticMeal: MealEntry = {
+        id: tempId,
+        mealHistoryId: tempId,
+        mealTemplateId: "",
+        name: manualMealName,
+        userContext: manualMealName,
+        aiDescription: "Manual entry",
+        totalCalories: calories,
+        calorieUncertaintyPercent: 0,
+        totalProteinG: protein,
+        proteinUncertaintyPercent: 0,
+        totalCarbsG: carbs,
+        carbsUncertaintyPercent: 0,
+        totalFatG: fat,
+        fatUncertaintyPercent: 0,
+        imageUrl: undefined,
+        processingStatus: MealTemplatesProcessingStatusOptions.completed,
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+      };
+
+      // Add optimistic entry to the beginning of meal history immediately
+      setMealHistory((prev) => [optimisticMeal, ...prev]);
+
+      // Create meal template with manual data
+      const newMealTemplate = await pb.collection(Collections.MealTemplates).create({
+        name: manualMealName,
+        description: manualMealName,
+        ai_description: "Manual entry",
+        total_calories: calories,
+        total_protein_g: protein,
+        total_carbs_g: carbs,
+        total_fat_g: fat,
+        calorie_uncertainty_percent: 0,
+        protein_uncertainty_percent: 0,
+        carbs_uncertainty_percent: 0,
+        fat_uncertainty_percent: 0,
+        processing_status: "completed",
+      });
+
+      // Create meal history entry
+      await pb.collection(Collections.MealHistory).create({
+        meal: newMealTemplate.id,
+        user: pb.authStore.record?.id,
+        portion_multiplier: 1.0,
+        adjustments: "Manual entry",
+      });
+
+      // Update the optimistic entry with the real ID
+      setMealHistory((prev) =>
+        prev.map((meal) =>
+          meal.id === tempId
+            ? {
+                ...meal,
+                id: newMealTemplate.id,
+                mealTemplateId: newMealTemplate.id,
+              }
+            : meal,
+        ),
+      );
+
+      // Clear form
+      setManualMealName("");
+      setManualCalories("");
+      setManualProtein("");
+      setManualCarbs("");
+      setManualFat("");
+      setShowManualEntry(false);
+
+      // Load fresh meal history to get any updates
+      await loadMealHistory();
+    } catch (error) {
+      console.error("Error creating manual meal:", error);
+
+      // Remove the optimistic entry on error
+      setMealHistory((prev) => prev.filter((meal) => meal.id !== tempId));
+    } finally {
+      setIsSubmittingMeal(false);
     }
   };
 
@@ -1019,22 +1124,22 @@ export default function CalorieTracker() {
               <div className="mb-4 flex items-center gap-2 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 px-3 py-2 rounded-md text-sm border border-blue-200 dark:border-blue-800">
                 <Repeat className="h-4 w-4" />
                 <span className="font-medium">Re-analyzing meal</span>
-                 <button
-                  onClick={() => {
-                    setReanalyzingMealId(null);
-                    setSelectedImage(null);
-                    setMealDescription("");
-                    if (imagePreviewUrl) {
-                      URL.revokeObjectURL(imagePreviewUrl);
-                      setImagePreviewUrl(null);
-                    }
-                  }}
-                  className="ml-auto text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            )}
+                  <button
+                   onClick={() => {
+                     setReanalyzingMealId(null);
+                     setSelectedImage(null);
+                     setMealDescription("");
+                     if (imagePreviewUrl) {
+                       URL.revokeObjectURL(imagePreviewUrl);
+                       setImagePreviewUrl(null);
+                     }
+                   }}
+                   className="ml-auto text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100"
+                 >
+                   <X className="h-4 w-4" />
+                 </button>
+               </div>
+             )}
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                 <Camera className="h-5 w-5 text-primary" />
@@ -1138,6 +1243,133 @@ export default function CalorieTracker() {
                   </>
                 )}
               </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Manual Meal Entry */}
+        <Card className="border-2">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-950/30 flex items-center justify-center">
+                  <span className="text-orange-600 dark:text-orange-400 font-bold text-lg">📝</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Quick Add Meal</h3>
+                  <p className="text-xs text-muted-foreground">Enter nutrition info manually</p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowManualEntry(!showManualEntry)}
+              >
+                {showManualEntry ? "Cancel" : "Add Manually"}
+              </Button>
+            </div>
+
+            {showManualEntry && (
+              <div className="space-y-4 mt-4 pt-4 border-t">
+                <div className="space-y-2">
+                  <Label htmlFor="manual-meal-name" className="text-sm font-medium">
+                    Meal Name
+                  </Label>
+                  <input
+                    id="manual-meal-name"
+                    type="text"
+                    placeholder="e.g., Protein shake, salad, etc."
+                    value={manualMealName}
+                    onChange={(e) => setManualMealName(e.target.value)}
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="manual-calories" className="text-sm font-medium">
+                      Calories
+                    </Label>
+                    <input
+                      id="manual-calories"
+                      type="number"
+                      placeholder="0"
+                      value={manualCalories}
+                      onChange={(e) => setManualCalories(e.target.value)}
+                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      min="0"
+                      step="1"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="manual-protein" className="text-sm font-medium">
+                      Protein (g)
+                    </Label>
+                    <input
+                      id="manual-protein"
+                      type="number"
+                      placeholder="0"
+                      value={manualProtein}
+                      onChange={(e) => setManualProtein(e.target.value)}
+                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      min="0"
+                      step="0.1"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="manual-carbs" className="text-sm font-medium">
+                      Carbs (g)
+                    </Label>
+                    <input
+                      id="manual-carbs"
+                      type="number"
+                      placeholder="0"
+                      value={manualCarbs}
+                      onChange={(e) => setManualCarbs(e.target.value)}
+                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      min="0"
+                      step="0.1"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="manual-fat" className="text-sm font-medium">
+                      Fat (g)
+                    </Label>
+                    <input
+                      id="manual-fat"
+                      type="number"
+                      placeholder="0"
+                      value={manualFat}
+                      onChange={(e) => setManualFat(e.target.value)}
+                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      min="0"
+                      step="0.1"
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleManualMealSubmission}
+                  disabled={isSubmittingMeal || !manualMealName.trim() || !manualCalories || !manualProtein || !manualCarbs || !manualFat}
+                  className="w-full shadow-md"
+                  size="lg"
+                >
+                  {isSubmittingMeal ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Adding Meal...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Add Meal
+                    </>
+                  )}
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>

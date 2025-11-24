@@ -299,14 +299,16 @@ export function MealReviewModal({
         </DrawerHeader>
 
         <div className="px-4 space-y-4 overflow-y-auto flex-1 pb-6">
-          {/* Captured Image */}
-          <div className="aspect-square w-full max-w-xs mx-auto rounded-lg overflow-hidden bg-gray-100">
-            <img
-              src={getFullImageUrl()}
-              alt="Your meal"
-              className="w-full h-full object-cover"
-            />
-          </div>
+          {/* Captured Image - Only show if image exists */}
+          {meal.imageUrl && (
+            <div className="aspect-square w-full max-w-xs mx-auto rounded-lg overflow-hidden bg-gray-100">
+              <img
+                src={getFullImageUrl()}
+                alt="Your meal"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
 
           {/* AI Analysis Results */}
           <div className="space-y-3">
@@ -738,7 +740,7 @@ export function MealReviewModal({
             </div>
           ) : (
             <div className="space-y-2">
-              {onReanalyze && (
+              {onReanalyze && meal.imageUrl && (
                 <Button
                   onClick={() => onReanalyze(meal)}
                   variant="outline"
