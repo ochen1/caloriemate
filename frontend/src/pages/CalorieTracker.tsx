@@ -12,6 +12,7 @@ import {
   Repeat,
   X,
 } from "lucide-react";
+import heic2any from "heic2any";
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -61,6 +62,8 @@ export default function CalorieTracker() {
   const [lastResetDate, setLastResetDate] = useState<string>(
     new Date().toDateString(),
   );
+  const [isDragging, setIsDragging] = useState(false);
+  const [isConvertingHeic, setIsConvertingHeic] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasLoadedMealsRef = useRef(false);
   const hasLoadedProfileRef = useRef(false);
@@ -389,15 +392,95 @@ export default function CalorieTracker() {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const convertHeicToJpeg = async (file: File): Promise<File> => {
+    try {
+      setIsConvertingHeic(true);
+      const convertedBlob = await heic2any({
+        blob: file,
+        toType: 'image/jpeg',
+        quality: 0.8,
+      });
+
+      // heic2any can return an array or a single blob
+      const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+
+      // Create a new File with the converted blob
+      const convertedFile = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), {
+        type: 'image/jpeg',
+        lastModified: Date.now(),
+      });
+
+      return convertedFile;
+    } catch (error) {
+      console.error('Error converting HEIC file:', error);
+      throw error;
+    } finally {
+      setIsConvertingHeic(false);
+    }
+  };
+
+  const processImageFile = async (file: File) => {
+    let processedFile = file;
+
+    // Check if file is HEIC/HEIF
+    if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().match(/\.(heic|heif)$/)) {
+      try {
+        processedFile = await convertHeicToJpeg(file);
+      } catch (error) {
+        console.error('Failed to convert HEIC file, using original:', error);
+        // Fall back to original file if conversion fails
+        processedFile = file;
+      }
+    }
+
+    if (imagePreviewUrl) {
+      URL.revokeObjectURL(imagePreviewUrl);
+    }
+    const newUrl = URL.createObjectURL(processedFile);
+    setSelectedImage(processedFile);
+    setImagePreviewUrl(newUrl);
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (imagePreviewUrl) {
-        URL.revokeObjectURL(imagePreviewUrl);
-      }
-      const newUrl = URL.createObjectURL(file);
-      setSelectedImage(file);
-      setImagePreviewUrl(newUrl);
+      await processImageFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set dragging to false if we're leaving the main container
+    if (e.currentTarget === e.target) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFile = files.find(file =>
+      file.type.startsWith('image/') ||
+      file.name.toLowerCase().match(/\.(heic|heif|jpg|jpeg|png|gif|webp)$/i)
+    );
+
+    if (imageFile) {
+      await processImageFile(imageFile);
     }
   };
 
@@ -752,7 +835,34 @@ export default function CalorieTracker() {
   const isFatGoalMet = fatProgress >= 100;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div
+      className="min-h-screen bg-background pb-20"
+      onDragOver={handleDragOver}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay */}
+      {(isDragging || isConvertingHeic) && (
+        <div className="fixed inset-0 bg-primary/10 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-card border-2 border-dashed border-primary rounded-lg p-8 text-center shadow-lg">
+            {isConvertingHeic ? (
+              <>
+                <Loader2 className="h-12 w-12 text-primary mx-auto mb-4 animate-spin" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">Converting HEIC image...</h3>
+                <p className="text-muted-foreground">Preparing your photo for analysis</p>
+              </>
+            ) : (
+              <>
+                <Camera className="h-12 w-12 text-primary mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">Drop your meal photo here</h3>
+                <p className="text-muted-foreground">Release to upload and analyze</p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-card shadow-sm border-b border-border">
         <div className="max-w-md mx-auto px-4 py-6">
@@ -1056,7 +1166,7 @@ export default function CalorieTracker() {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.heic,.heif"
         onChange={handleFileUpload}
         className="hidden"
       />
