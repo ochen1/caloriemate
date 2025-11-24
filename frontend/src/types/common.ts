@@ -1,9 +1,8 @@
 // Central types file for shared interfaces across the application
-import type { 
-  UserProfilesResponse, 
-  MealTemplatesResponse, 
+import type {
+  UserProfilesResponse,
+  MealTemplatesResponse,
   MealHistoryResponse,
-  ActivityLogsResponse,
   UserProfilesGenderOptions,
   UserProfilesActivityLevelOptions,
   UserProfilesGoalOptions,
@@ -14,7 +13,6 @@ import type {
 export type UserProfile = UserProfilesResponse;
 export type MealTemplate = MealTemplatesResponse;
 export type MealHistoryEntry = MealHistoryResponse;
-export type ActivityLog = ActivityLogsResponse;
 
 // Type aliases for enums
 export type Gender = UserProfilesGenderOptions;
