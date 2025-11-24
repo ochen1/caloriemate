@@ -20,12 +20,13 @@
     "terminal.integrated.shell.linux": "/bin/bash",
     "go.useLanguageServer": true
   },
-  "forwardPorts": [5174, 8080],
+  "forwardPorts": [5173, 8080, 8081],
   "mounts": [
     // "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
   ],
   "postCreateCommand": "bash -lc 'set -e; go mod download || true; npm ci --prefix frontend || true; command -v pnpm >/dev/null 2>&1 || npm i -g pnpm; pnpm --prefix frontend install || true'",
   "postStartCommand": "bash -lc 'echo Project available at: $VSCODE_DEV_CONTAINER_WORKSPACE_FOLDER or /workspaces/caloriemate; ls -la /workspaces/caloriemate'",
   "remoteUser": "vscode",
-  "workspaceFolder": "/workspaces/caloriemate"
+  "workspaceFolder": "/workspaces/caloriemate",
+  "runArgs": ["--add-host=host.docker.internal:host-gateway"] 
 }
