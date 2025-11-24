@@ -23,6 +23,8 @@ export type ProcessingStatus = MealTemplatesProcessingStatusOptions;
 export interface UserGoals {
   target_calories: number
   target_protein_g: number
+  target_carbs_g: number
+  target_fat_g: number
   weight: number
   age: number
 }
@@ -36,6 +38,8 @@ export interface OnboardingData {
   goal: Goal
   customCalories?: number
   customProtein?: number
+  customCarbs?: number
+  customFat?: number
 }
 
 export interface OnboardingFormData {
@@ -47,6 +51,8 @@ export interface OnboardingFormData {
   goal: Goal
   customCalories: string
   customProtein: string
+  customCarbs: string
+  customFat: string
 }
 
 export interface SignupData {

@@ -146,7 +146,23 @@ export function MealHistoryCard({
                     meal.proteinUncertaintyPercent,
                     "g",
                   )}{" "}
-                  protein
+                  P
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {formatNutritionWithUncertainty(
+                    meal.totalCarbsG,
+                    meal.carbsUncertaintyPercent,
+                    "g",
+                  )}{" "}
+                  C
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {formatNutritionWithUncertainty(
+                    meal.totalFatG,
+                    meal.fatUncertaintyPercent,
+                    "g",
+                  )}{" "}
+                  F
                 </Badge>
               </div>
             ) : (

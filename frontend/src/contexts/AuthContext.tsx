@@ -77,6 +77,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           user: authData.record.id,
           target_calories: data.userGoals.target_calories,
           target_protein_g: data.userGoals.target_protein_g,
+          target_carbs_g: data.userGoals.target_carbs_g,
+          target_fat_g: data.userGoals.target_fat_g,
           weight_kg: data.onboardingData.weight,
           age: data.onboardingData.age,
           height_cm: data.onboardingData.height,

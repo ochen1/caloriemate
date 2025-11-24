@@ -29,15 +29,6 @@ export default function SignupPage({ onSwitchToLogin }: SignupPageProps) {
   const { signup } = useAuth();
 
   const calculateGoalsFromOnboarding = (data: OnboardingData): UserGoals => {
-    if (data.customCalories && data.customProtein) {
-      return {
-        target_calories: data.customCalories,
-        target_protein_g: data.customProtein,
-        weight: data.weight,
-        age: data.age,
-      };
-    }
-
     // Calculate BMR
     let bmr: number;
     if (data.gender === "male") {
@@ -63,12 +54,21 @@ export default function SignupPage({ onSwitchToLogin }: SignupPageProps) {
     if (data.goal === "gain_weight" || data.goal === "gain_muscle")
       calories += 500;
 
-    // Protein calculation
-    const protein = Math.round(data.weight * 1.8);
+    // Use custom values if provided, otherwise calculate
+    const finalCalories = data.customCalories || Math.round(calories);
+    const protein = data.customProtein || Math.round(data.weight * 1.8);
+    
+    // Carbs: 40-50% of calories (using 45% as middle ground), 1g carbs = 4 calories
+    const carbs = data.customCarbs || Math.round((finalCalories * 0.45) / 4);
+    
+    // Fat: 25-30% of calories (using 27.5% as middle ground), 1g fat = 9 calories
+    const fat = data.customFat || Math.round((finalCalories * 0.275) / 9);
 
     return {
-      target_calories: Math.round(calories),
+      target_calories: finalCalories,
       target_protein_g: protein,
+      target_carbs_g: carbs,
+      target_fat_g: fat,
       weight: data.weight,
       age: data.age,
     };

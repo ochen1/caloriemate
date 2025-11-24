@@ -31,6 +31,8 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
   const [profile, setProfile] = useState<Partial<UserProfile>>({
     target_calories: 0,
     target_protein_g: 0,
+    target_carbs_g: 0,
+    target_fat_g: 0,
     weight_kg: 0,
     age: 0,
     height_cm: 0,
@@ -74,6 +76,8 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
           id: userProfile.id,
           target_calories: userProfile.target_calories || 2000,
           target_protein_g: userProfile.target_protein_g || 150,
+          target_carbs_g: userProfile.target_carbs_g || 250,
+          target_fat_g: userProfile.target_fat_g || 65,
           weight_kg: userProfile.weight_kg || 70,
           age: userProfile.age || 25,
           height_cm: userProfile.height_cm || 170,
@@ -113,6 +117,8 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
         user: user.id,
         target_calories: profile.target_calories,
         target_protein_g: profile.target_protein_g,
+        target_carbs_g: profile.target_carbs_g,
+        target_fat_g: profile.target_fat_g,
         weight_kg: profile.weight_kg,
         age: profile.age,
       };
@@ -293,6 +299,38 @@ export default function ProfilePage({ onBack }: ProfilePageProps) {
               />
               <p className="text-xs text-muted-foreground">
                 Recommended: 1.6-2.2g per kg body weight
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="carbs">Daily Carbs Target (g)</Label>
+              <Input
+                id="carbs"
+                type="number"
+                value={profile.target_carbs_g}
+                onChange={(e) =>
+                  handleInputChange("target_carbs_g", e.target.value)
+                }
+                min="20"
+                max="600"
+              />
+              <p className="text-xs text-muted-foreground">
+                Recommended: 40-50% of daily calories
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="fat">Daily Fat Target (g)</Label>
+              <Input
+                id="fat"
+                type="number"
+                value={profile.target_fat_g}
+                onChange={(e) =>
+                  handleInputChange("target_fat_g", e.target.value)
+                }
+                min="20"
+                max="200"
+              />
+              <p className="text-xs text-muted-foreground">
+                Recommended: 25-30% of daily calories
               </p>
             </div>
           </CardContent>

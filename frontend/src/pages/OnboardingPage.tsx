@@ -36,6 +36,8 @@ export default function OnboardingPage({
     goal: UserProfilesGoalOptions.maintain,
     customCalories: "",
     customProtein: "",
+    customCarbs: "",
+    customFat: "",
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -75,9 +77,19 @@ export default function OnboardingPage({
     // Protein: 1.6-2.2g per kg body weight
     const protein = Math.round(weight * 1.8);
 
+    // Carbs: 40-50% of calories (using 45% as middle ground)
+    // 1g carbs = 4 calories
+    const carbs = Math.round((calories * 0.45) / 4);
+
+    // Fat: 25-30% of calories (using 27.5% as middle ground)
+    // 1g fat = 9 calories
+    const fat = Math.round((calories * 0.275) / 9);
+
     return {
       calories: Math.round(calories),
       protein,
+      carbs,
+      fat,
     };
   };
 
@@ -94,6 +106,12 @@ export default function OnboardingPage({
         : undefined,
       customProtein: formData.customProtein
         ? parseInt(formData.customProtein)
+        : undefined,
+      customCarbs: formData.customCarbs
+        ? parseInt(formData.customCarbs)
+        : undefined,
+      customFat: formData.customFat
+        ? parseInt(formData.customFat)
         : undefined,
     };
 
@@ -267,6 +285,12 @@ export default function OnboardingPage({
                   <p className="text-sm text-muted-foreground">
                     Protein: {calculateGoals().protein}g/day
                   </p>
+                  <p className="text-sm text-muted-foreground">
+                    Carbs: {calculateGoals().carbs}g/day
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Fat: {calculateGoals().fat}g/day
+                  </p>
                 </div>
 
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
@@ -300,6 +324,30 @@ export default function OnboardingPage({
                       value={formData.customProtein}
                       onChange={(e) =>
                         handleInputChange("customProtein", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="customCarbs">Daily Carbs (g)</Label>
+                    <Input
+                      id="customCarbs"
+                      type="number"
+                      placeholder={calculateGoals().carbs.toString()}
+                      value={formData.customCarbs}
+                      onChange={(e) =>
+                        handleInputChange("customCarbs", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="customFat">Daily Fat (g)</Label>
+                    <Input
+                      id="customFat"
+                      type="number"
+                      placeholder={calculateGoals().fat.toString()}
+                      value={formData.customFat}
+                      onChange={(e) =>
+                        handleInputChange("customFat", e.target.value)
                       }
                     />
                   </div>

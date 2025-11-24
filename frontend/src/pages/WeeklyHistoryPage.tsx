@@ -17,9 +17,13 @@ interface DayData {
   date: Date;
   totalCalories: number;
   totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
   mealCount: number;
   calorieStatus: 'none' | 'perfect' | 'slight-over' | 'over' | 'way-over' | 'under';
   proteinStatus: 'none' | 'perfect' | 'close' | 'under';
+  carbsStatus: 'none' | 'perfect' | 'close' | 'under';
+  fatStatus: 'none' | 'perfect' | 'close' | 'under';
 }
 
 export default function WeeklyHistoryPage({ onBack, userGoals }: WeeklyHistoryPageProps) {
@@ -80,6 +84,26 @@ export default function WeeklyHistoryPage({ onBack, userGoals }: WeeklyHistoryPa
     if (protein === 0) return 'none';
     
     const percentage = (protein / targetProtein) * 100;
+    
+    if (percentage >= 100) return 'perfect';
+    if (percentage >= 80) return 'close';
+    return 'under';
+  }, []);
+
+  const calculateCarbsStatus = useCallback((carbs: number, targetCarbs: number): DayData['carbsStatus'] => {
+    if (carbs === 0) return 'none';
+    
+    const percentage = (carbs / targetCarbs) * 100;
+    
+    if (percentage >= 100) return 'perfect';
+    if (percentage >= 80) return 'close';
+    return 'under';
+  }, []);
+
+  const calculateFatStatus = useCallback((fat: number, targetFat: number): DayData['fatStatus'] => {
+    if (fat === 0) return 'none';
+    
+    const percentage = (fat / targetFat) * 100;
     
     if (percentage >= 100) return 'perfect';
     if (percentage >= 80) return 'close';
@@ -159,16 +183,40 @@ export default function WeeklyHistoryPage({ onBack, userGoals }: WeeklyHistoryPa
           return sum + Math.round(protein);
         }, 0);
 
+        const totalCarbs = completedMeals.reduce((sum, record) => {
+          const recordData = record as Record<string, unknown>;
+          const expandData = recordData.expand as Record<string, unknown>;
+          const mealTemplate = expandData?.meal as Record<string, unknown>;
+          const portionMultiplier = (recordData.portion_multiplier as number) || 1.0;
+          const carbs = ((mealTemplate?.total_carbs_g as number) || 0) * portionMultiplier + ((recordData.carb_adjustment as number) || 0);
+          return sum + Math.round(carbs);
+        }, 0);
+
+        const totalFat = completedMeals.reduce((sum, record) => {
+          const recordData = record as Record<string, unknown>;
+          const expandData = recordData.expand as Record<string, unknown>;
+          const mealTemplate = expandData?.meal as Record<string, unknown>;
+          const portionMultiplier = (recordData.portion_multiplier as number) || 1.0;
+          const fat = ((mealTemplate?.total_fat_g as number) || 0) * portionMultiplier + ((recordData.fat_adjustment as number) || 0);
+          return sum + Math.round(fat);
+        }, 0);
+
         const calorieStatus = calculateCalorieStatus(totalCalories, userGoals.target_calories, userGoal);
         const proteinStatus = calculateProteinStatus(totalProtein, userGoals.target_protein_g);
+        const carbsStatus = calculateCarbsStatus(totalCarbs, userGoals.target_carbs_g);
+        const fatStatus = calculateFatStatus(totalFat, userGoals.target_fat_g);
 
         return {
           date,
           totalCalories,
           totalProtein,
+          totalCarbs,
+          totalFat,
           mealCount: completedMeals.length,
           calorieStatus,
           proteinStatus,
+          carbsStatus,
+          fatStatus,
         };
       });
 
@@ -188,7 +236,7 @@ export default function WeeklyHistoryPage({ onBack, userGoals }: WeeklyHistoryPa
     if (userGoals && userGoal) {
       loadWeeklyData();
     }
-  }, [loadWeeklyData, userGoals, userGoal]);
+  }, [loadWeeklyData, userGoals, userGoal, calculateCarbsStatus, calculateFatStatus]);
 
   const navigateWeek = (direction: 'prev' | 'next') => {
     const newWeekStart = new Date(currentWeekStart);
@@ -395,6 +443,26 @@ export default function WeeklyHistoryPage({ onBack, userGoals }: WeeklyHistoryPa
                                   {dayData.totalProtein}g
                                 </span>
                                 {getStatusBadge(dayData.proteinStatus)}
+                              </div>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Carbs</p>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">
+                                  {dayData.totalCarbs}g
+                                </span>
+                                {getStatusBadge(dayData.carbsStatus)}
+                              </div>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Fat</p>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">
+                                  {dayData.totalFat}g
+                                </span>
+                                {getStatusBadge(dayData.fatStatus)}
                               </div>
                             </div>
                           </div>

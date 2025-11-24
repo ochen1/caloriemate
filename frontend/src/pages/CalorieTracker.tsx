@@ -41,6 +41,8 @@ export default function CalorieTracker() {
   const [userGoals, setUserGoals] = useState<UserGoals | null>(null);
   const [todayCalories, setTodayCalories] = useState(0);
   const [todayProtein, setTodayProtein] = useState(0);
+  const [todayCarbs, setTodayCarbs] = useState(0);
+  const [todayFat, setTodayFat] = useState(0);
   const [showMealReview, setShowMealReview] = useState(false);
   const [mealReviewMode, setMealReviewMode] = useState<"review" | "view">(
     "review",
@@ -84,6 +86,8 @@ export default function CalorieTracker() {
         const goals: UserGoals = {
           target_calories: profile.target_calories || 2000,
           target_protein_g: profile.target_protein_g || 150,
+          target_carbs_g: profile.target_carbs_g || 250,
+          target_fat_g: profile.target_fat_g || 65,
           weight: profile.weight_kg || 70, // Convert weight_kg to weight
           age: profile.age || 25,
         };
@@ -110,9 +114,9 @@ export default function CalorieTracker() {
         sort: "-created",
         expand: "meal",
         filter: pb.filter(
-          "adjustments != {:adjustment} && created > {:today}",
+          "adjustments != {:adjustment} && created >= {:today}",
           {
-            today: new Date(new Date().setHours(0, 0, 0, 0)).toISOString(),
+            today: new Date(new Date().setHours(0, 0, 0, 0)).toISOString().replace('T', ' '),
             adjustment: "hidden",
           },
         ),
@@ -181,11 +185,11 @@ export default function CalorieTracker() {
         };
       });
 
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
+      const todayMidnightDate = new Date();
+      todayMidnightDate.setHours(0, 0, 0, 0);
       const todaysMeals = meals.filter((meal) => {
         const mealDate = new Date(meal.created);
-        return mealDate >= todayStart;
+        return mealDate >= todayMidnightDate;
       });
 
       setMealHistory((prevHistory) => {
@@ -240,9 +244,19 @@ export default function CalorieTracker() {
         (sum, meal) => sum + meal.totalProteinG,
         0,
       );
+      const totalCarbs = completedTodayMeals.reduce(
+        (sum, meal) => sum + meal.totalCarbsG,
+        0,
+      );
+      const totalFat = completedTodayMeals.reduce(
+        (sum, meal) => sum + meal.totalFatG,
+        0,
+      );
 
       setTodayCalories(totalCalories);
       setTodayProtein(totalProtein);
+      setTodayCarbs(totalCarbs);
+      setTodayFat(totalFat);
     } catch (error) {
       console.error("Failed to load meal history:", error);
     }
@@ -308,9 +322,19 @@ export default function CalorieTracker() {
         // Protein: 1.6-2.2g per kg body weight
         const protein = Math.round(weight * 1.8);
 
+        // Carbs: 40-50% of calories (using 45% as middle ground)
+        // 1g carbs = 4 calories
+        const carbs = Math.round((calories * 0.45) / 4);
+
+        // Fat: 25-30% of calories (using 27.5% as middle ground)
+        // 1g fat = 9 calories
+        const fat = Math.round((calories * 0.275) / 9);
+
         return {
           calories: Math.round(calories),
           protein,
+          carbs,
+          fat,
         };
       };
 
@@ -321,6 +345,8 @@ export default function CalorieTracker() {
         user: user.id,
         target_calories: data.customCalories || calculatedGoals.calories,
         target_protein_g: data.customProtein || calculatedGoals.protein,
+        target_carbs_g: data.customCarbs || calculatedGoals.carbs,
+        target_fat_g: data.customFat || calculatedGoals.fat,
         weight_kg: data.weight,
         age: data.age,
         height_cm: data.height,
@@ -339,6 +365,8 @@ export default function CalorieTracker() {
       const goals: UserGoals = {
         target_calories: data.customCalories || calculatedGoals.calories,
         target_protein_g: data.customProtein || calculatedGoals.protein,
+        target_carbs_g: data.customCarbs || calculatedGoals.carbs,
+        target_fat_g: data.customFat || calculatedGoals.fat,
         weight: data.weight, // Note: this maps to weight_kg in DB
         age: data.age,
       };
@@ -608,21 +636,20 @@ export default function CalorieTracker() {
   };
 
 
-  // Check for daily reset and clear old data on mount
+  // Check for daily reset on mount
   useEffect(() => {
     const currentDate = new Date().toDateString();
 
-    setMealHistory([]);
-    setTodayCalories(0);
-    setTodayProtein(0);
-
     if (currentDate !== lastResetDate) {
       setLastResetDate(currentDate);
+      setMealHistory([]);
+      setTodayCalories(0);
+      setTodayProtein(0);
+      setTodayCarbs(0);
+      setTodayFat(0);
       hasLoadedMealsRef.current = false;
     }
-
-    loadMealHistory();
-  }, [lastResetDate, loadMealHistory]);
+  }, [lastResetDate]);
 
   // Set up interval to check for date changes (in case app stays open across midnight)
   useEffect(() => {
@@ -631,6 +658,8 @@ export default function CalorieTracker() {
       if (currentDate !== lastResetDate) {
         setTodayCalories(0);
         setTodayProtein(0);
+        setTodayCarbs(0);
+        setTodayFat(0);
         setMealHistory([]);
         setLastResetDate(currentDate);
 
@@ -711,8 +740,16 @@ export default function CalorieTracker() {
   const proteinProgress = userGoals
     ? (todayProtein / userGoals.target_protein_g) * 100
     : 0;
+  const carbsProgress = userGoals
+    ? (todayCarbs / userGoals.target_carbs_g) * 100
+    : 0;
+  const fatProgress = userGoals
+    ? (todayFat / userGoals.target_fat_g) * 100
+    : 0;
   const isCalorieGoalMet = calorieProgress >= 100;
   const isProteinGoalMet = proteinProgress >= 100;
+  const isCarbsGoalMet = carbsProgress >= 100;
+  const isFatGoalMet = fatProgress >= 100;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -810,6 +847,52 @@ export default function CalorieTracker() {
               </div>
               <Progress
                 value={Math.min(proteinProgress, 100)}
+                className="h-2"
+              />
+            </div>
+
+            {/* Carbs */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-foreground">
+                  Carbs
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold">
+                    {todayCarbs}g / {userGoals?.target_carbs_g}g
+                  </span>
+                  {isCarbsGoalMet && (
+                    <Badge variant="secondary" className="text-xs">
+                      Goal Met!
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <Progress
+                value={Math.min(carbsProgress, 100)}
+                className="h-2"
+              />
+            </div>
+
+            {/* Fat */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-foreground">
+                  Fat
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold">
+                    {todayFat}g / {userGoals?.target_fat_g}g
+                  </span>
+                  {isFatGoalMet && (
+                    <Badge variant="secondary" className="text-xs">
+                      Goal Met!
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <Progress
+                value={Math.min(fatProgress, 100)}
                 className="h-2"
               />
             </div>

@@ -145,7 +145,13 @@ export default function MealLibraryPage({ onBack, onMealLogged }: MealLibraryPag
                             {meal.total_calories} kcal
                           </Badge>
                           <Badge variant="outline" className="text-xs">
-                            {meal.total_protein_g}g protein
+                            {meal.total_protein_g}g P
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {meal.total_carbs_g}g C
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {meal.total_fat_g}g F
                           </Badge>
                         </div>
                       </div>
