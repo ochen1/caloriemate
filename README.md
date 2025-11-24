@@ -11,7 +11,7 @@ This repository includes a VS Code development container configuration. To use i
 
 1. Install the "Remote - Containers" extension in VS Code.
 2. Open the repo and choose **Remote-Containers: Reopen in Container**.
-3. The container will preinstall Go and frontend dependencies and expose ports `5174` and `8080`.
+3. The container will preinstall Go and frontend dependencies and expose ports `5174`, `8080`, and `8081`.
 
 A personal project I built to help track what I eat without overthinking it. The idea is simple: snap a photo of your meal, let AI give you a rough estimate of calories and protein, and get back to eating. No fuss, no precise measurements, just enough info to build awareness of what you're consuming.
 
