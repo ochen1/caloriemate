@@ -193,27 +193,14 @@ export function MealReviewModal({
   const handleRemoveMeal = async () => {
     if (!meal.mealHistoryId || !onMealRemoved) return;
 
-    if (!confirm("Remove this meal from today's list? The meal will be kept in your templates.")) {
+    if (!confirm("Are you sure you want to remove this meal from your history?")) {
       return;
     }
 
     setIsRemoving(true);
 
     try {
-      const response = await fetch(
-        `${pb.baseURL}/api/v1/meal/${meal.mealHistoryId}/hide`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': pb.authStore.token ? `Bearer ${pb.authStore.token}` : '',
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to remove meal');
-      }
-
+      await pb.collection("meal_history").delete(meal.mealHistoryId);
       onMealRemoved();
       onClose();
     } catch (error) {
@@ -676,7 +663,7 @@ export function MealReviewModal({
                       </span>
                     </div>
                     <p className="text-xs text-red-600 dark:text-red-500 mt-1">
-                      This will hide the meal from today but keep it in your templates
+                      This will remove the meal from your history
                     </p>
                   </CardContent>
                 </Card>

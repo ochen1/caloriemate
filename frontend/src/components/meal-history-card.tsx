@@ -1,12 +1,15 @@
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
 import {
   Clock,
   Loader2,
   CheckCircle,
   AlertCircle,
+  Trash2,
 } from "lucide-react";
 import { MealEntry } from "../types/meal";
+import pb from "../lib/pocketbase";
 
 interface MealHistoryCardProps {
   meal: MealEntry;
@@ -17,6 +20,7 @@ interface MealHistoryCardProps {
 export function MealHistoryCard({
   meal,
   onClick,
+  onMealRemoved,
 }: MealHistoryCardProps) {
 
   const timeString = new Date(meal.created).toLocaleTimeString("en-US", {
@@ -65,6 +69,18 @@ export function MealHistoryCard({
 
   const isClickable = meal.processingStatus === "completed";
 
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to remove this meal from your history?")) return;
+
+    try {
+      await pb.collection("meal_history").delete(meal.mealHistoryId);
+      onMealRemoved?.();
+    } catch (error) {
+      console.error("Failed to delete meal history:", error);
+    }
+  };
+
   return (
     <Card
       className={`transition-shadow ${isClickable ? "hover:shadow-md cursor-pointer" : ""}`}
@@ -96,6 +112,14 @@ export function MealHistoryCard({
               </div>
               <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                 {getStatusIcon()}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 -mr-1 text-muted-foreground hover:text-destructive"
+                  onClick={handleDelete}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 

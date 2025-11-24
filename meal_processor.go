@@ -168,6 +168,34 @@ func upsertMealVector(app core.App, recordId string, mealVector []byte) error {
 
 	return nil
 }
+func deleteMealVector(app core.App, recordId string) error {
+	slog.Info("Attempting to delete meal vector", "recordId", recordId)
+	
+	// First find the rowid
+	var result struct {
+		Rowid int64 `db:"rowid"`
+	}
+	err := app.DB().NewQuery("SELECT rowid FROM meal_image_vectors WHERE meal_template_id = {:id}").Bind(dbx.Params{
+		"id": recordId,
+	}).One(&result)
+
+	if err != nil {
+		slog.Error("Failed to find meal vector rowid", "error", err)
+		return nil // Don't error out if not found
+	}
+
+	_, err = app.DB().NewQuery("DELETE FROM meal_image_vectors WHERE rowid = {:rowid}").Bind(dbx.Params{
+		"rowid": result.Rowid,
+	}).Execute()
+
+	if err != nil {
+		slog.Error("Failed to delete meal vector", "error", err)
+		return err
+	}
+
+	slog.Info("Successfully deleted meal vector", "recordId", recordId, "rowid", result.Rowid)
+	return nil
+}
 
 func processMealTemplate(app core.App, record *core.Record, llm ai.Analyzer, imgLlm ai.Embedder) error {
 	slog.Info("Starting meal template analysis", "recordId", record.Id)

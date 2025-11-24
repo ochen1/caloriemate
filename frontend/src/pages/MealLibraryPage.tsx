@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, BookOpen, Loader2, Plus } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -62,6 +62,19 @@ export default function MealLibraryPage({ onBack, onMealLogged }: MealLibraryPag
       console.error("Failed to log meal:", error);
     } finally {
       setLoggingMealId(null);
+    }
+  };
+
+  const handleDeleteMeal = async (mealTemplateId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this meal template? This action cannot be undone.")) return;
+
+    try {
+      await pb.collection("meal_templates").delete(mealTemplateId);
+      setMeals((prev) => prev.filter((m) => m.id !== mealTemplateId));
+    } catch (error) {
+      console.error("Failed to delete meal:", error);
+      alert("Failed to delete meal template");
     }
   };
 
@@ -144,24 +157,34 @@ export default function MealLibraryPage({ onBack, onMealLogged }: MealLibraryPag
                       </p>
                     )}
 
-                    <Button
-                      onClick={() => handleLogMeal(meal.id)}
-                      disabled={isLogging}
-                      size="sm"
-                      className="w-full"
-                    >
-                      {isLogging ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Logging...
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Log This Meal
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleLogMeal(meal.id)}
+                        disabled={isLogging}
+                        size="sm"
+                        className="flex-1"
+                      >
+                        {isLogging ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Logging...
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Log This Meal
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="h-9 w-9 shrink-0"
+                        onClick={(e) => handleDeleteMeal(meal.id, e)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               );

@@ -172,6 +172,14 @@ func main() {
 		return e.Next()
 	})
 
+	app.OnRecordAfterDeleteSuccess(types.COL_MEAL_TEMPLATES).BindFunc(func(e *core.RecordEvent) error {
+		slog.Info("Deleting meal vector", "recordId", e.Record.Id)
+		if err := deleteMealVector(e.App, e.Record.Id); err != nil {
+			slog.Error("Failed to delete meal vector", "error", err)
+		}
+		return e.Next()
+	})
+
 	app.Logger().Info("Starting app", "stage", stage)
 
 	if err := app.Start(); err != nil {
